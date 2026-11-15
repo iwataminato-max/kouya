@@ -223,6 +223,7 @@
   }
 
   function executeCalc() {
+    console.log("計算ボタンが押されました！");
     const dendoType = String(getVal("hoshidendo"));
     const timing = String(getVal("hikutaimingu"));
     const startDate = parseStartDate("kaishibi");
@@ -268,8 +269,9 @@
     ['calc-btn1', 'calc-btn2'].forEach(id => {
       const btn = document.getElementById(id);
       if (btn) {
-        btn.onclick = executeCalc;
+        btn.addEventListener("click", executeCalc);
         boundCount++;
+        console.log("ボタン発見＆紐付け完了: " + id);
       }
     });
 
