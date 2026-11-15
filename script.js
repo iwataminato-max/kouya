@@ -223,7 +223,7 @@
   }
 
   function executeCalc() {
-    console.log("計算ボタンが押されました！");
+    console.log("計算ボタンがクリックされました！");
     const dendoType = String(getVal("hoshidendo"));
     const timing = String(getVal("hikutaimingu"));
     const startDate = parseStartDate("kaishibi");
@@ -265,24 +265,19 @@
   }
 
   function setupButtons() {
-    let boundCount = 0;
     ['calc-btn1', 'calc-btn2'].forEach(id => {
-      const btn = document.getElementById(id);
-      if (btn) {
-        btn.addEventListener("click", executeCalc);
-        boundCount++;
-        console.log("ボタン発見＆紐付け完了: " + id);
+      const el = document.getElementById(id);
+      if (el && !el.dataset.bound) {
+        el.dataset.bound = "true";
+        // ポインターイベントやクリックを確実に拾う設定
+        el.style.cursor = "pointer";
+        el.addEventListener("click", executeCalc);
+        el.addEventListener("touchend", executeCalc);
+        console.log("要素を発見＆クリックイベント設定完了: " + id);
       }
     });
-
-    if (boundCount === 0) {
-      setTimeout(setupButtons, 500);
-    }
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", setupButtons);
-  } else {
-    setupButtons();
-  }
+  // 常時監視してDOMが動的に変わっても対応できるようにする
+  setInterval(setupButtons, 1000);
 })();
