@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>荒野行動 ガチャ最適化ツール統合版</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f7f9fa;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        /* タブ切り替えボタンのスタイル */
+        .tab-menu {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 12px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            background-color: #eee;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #555;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .tab-btn.active {
+            background-color: #ff6b00;
+            color: #fff;
+        }
+        .tool-section {
+            display: none;
+        }
+        .tool-section.active {
+            display: block;
+        }
+        h2 {
+            font-size: 1.1rem;
+            border-bottom: 2px solid #ff6b00;
+            padding-bottom: 6px;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            color: #111;
+        }
+        .form-grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-group-full {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #555;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 0.95rem;
+        }
+        .calc-btn {
+            display: block;
+            width: 100%;
+            background-color: #ff6b00;
+            color: #fff;
+            text-align: center;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .calc-btn:hover {
+            background-color: #e05e00;
+        }
+        .result-box {
+            margin-top: 20px;
+            background: #fff8f2;
+            border: 1px solid #ffd8bf;
+            padding: 14px;
+            border-radius: 8px;
+        }
+        .result-box h3 {
+            margin-top: 0;
+            font-size: 0.95rem;
+            color: #d95c00;
+        }
+        .result-item {
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+        .total-price {
+            font-weight: bold;
+            font-size: 1rem;
+            color: #111;
+            margin-top: 10px;
+            border-top: 1px dashed #ffd8bf;
+            padding-top: 8px;
+        }
+        .unit-price {
+            font-size: 0.9rem;
+            color: #d95c00;
+            margin-top: 4px;
+        }
+        .gacha-count {
+            font-size: 0.9rem;
+            color: #0077cc;
+            margin-top: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- タブ切り替えメニュー -->
+    <div class="tab-menu">
+        <button type="button" class="tab-btn active" onclick="switchTab('tool1')">ツール1 (ガチャ最適化)</button>
+        <button type="button" class="tab-btn" onclick="switchTab('tool2')">ツール2 (予算内コスパ最優先)</button>
+    </div>
+
+    <!-- ================= ツール1 ================= -->
+    <div id="tool1-section" class="tool-section active">
+        <h2>基本設定</h2>
+        <div class="form-grid-2col">
+            <div class="form-group" style="margin-bottom:0;">
+                <label>欲しい殿堂種</label>
+                <select id="t1-hoshidendo">
+                    <option value="銃" selected>銃</option>
+                    <option value="衣装">衣装</option>
+                    <option value="車">車</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label>持っている水晶</label>
+                <select id="t1-have-crystals">
+                    <option value="0" selected>0個</option>
+                    <option value="1">1個</option>
+                    <option value="2">2個</option>
+                    <option value="3">3個</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-grid-2col">
+            <div class="form-group">
+                <label>引くタイミング</label>
+                <select id="t1-hikutaimingu">
+                    <option value="初週" selected>初週</option>
+                    <option value="初週以外">初週以外</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>ガチャ開始日</label>
+                <input type="date" id="t1-kaishibi">
+            </div>
+        </div>
+
+        <h2>手持ち・進行状況</h2>
+        <div class="form-group-full">
+            <label>所持金券</label>
+            <input type="number" id="t1-kinken" value="0">
+        </div>
+        <div class="form-grid-2col">
+            <div class="form-group">
+                <label>現在のEXポイント</label>
+                <input type="number" id="t1-expoint" value="0">
+            </div>
+            <div class="form-group">
+                <label>現在の通常ポイント</label>
+                <input type="number" id="t1-tuuzyoupoint" value="0">
+            </div>
+        </div>
+        <div class="form-grid-2col">
+            <div class="form-group">
+                <label>現在のEXチケット</label>
+                <input type="number" id="t1-exchiketto" value="0">
+            </div>
+            <div class="form-group">
+                <label>現在の通常チケット</label>
+                <input type="number" id="t1-tuuzyouchiketto" value="0">
+            </div>
+        </div>
+
+        <h2>限定殿堂パック</h2>
+        <div class="form-grid-2col">
+            <div class="form-group">
+                <label>限定殿堂パック 3枚の残り</label>
+                <select id="t1-pack3">
+                    <option value="1" selected>1個</option>
+                    <option value="0">0個</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>限定殿堂パック 10枚の残り</label>
+                <select id="t1-pack10">
+                    <option value="1" selected>1個</option>
+                    <option value="0">0個</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-grid-2col">
+            <div class="form-group">
+                <label>限定殿堂パック 50枚の残り</label>
+                <select id="t1-pack50">
+                    <option value="3" selected>3個</option>
+                    <option value="2">2個</option>
+                    <option value="1">1個</option>
+                    <option value="0">0個</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>限定殿堂パック 90枚の残り</label>
+                <select id="t1-pack90">
+                    <option value="3" selected>3個</option>
+                    <option value="2">2個</option>
+                    <option value="1">1個</option>
+                    <option value="0">0個</option>
+                </select>
+            </div>
+        </div>
+
+        <h2>チャージ特典</h2>
+        <div class="form-grid-2col">
+            <div class="form-group">
+                <label>還元条件1</label>
+                <input type="text" id="t1-kangen-1" value="6480金券で30枚" readonly style="background:#f0f0f0; color:#555;">
+            </div>
+            <div class="form-group">
+                <label>日数1</label>
+                <select id="t1-nissuu-1">
+                    <option value="0">0日</option>
+                    <option value="1">1日</option>
+                    <option value="2" selected>2日</option>
+                    <option value="3">3日</option>
+                    <option value="4">4日</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-grid-2col">
+            <div class="form-group">
+                <label>還元条件2</label>
+                <input type="text" id="t1-kangen-2" value="1280金券で10枚" readonly style="background:#f0f0f0; color:#555;">
+            </div>
+            <div class="form-group">
+                <label>日数2</label>
+                <select id="t1-nissuu-2">
+                    <option value="0">0日</option>
+                    <option value="1">1日</option>
+                    <option value="2" selected>2日</option>
+                    <option value="3">3日</option>
+                    <option value="4">4日</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="button" id="t1-calc-btn" class="calc-btn">計算する</button>
+
+        <div class="result-box" id="t1-result1-container" style="display:none;">
+            <h3>プラン1：最安値 (-10枚〜+20枚での最安値)</h3>
+            <div id="t1-min-day1" class="result-item" style="display:none;"></div>
+            <div id="t1-min-day2" class="result-item" style="display:none;"></div>
+            <div id="t1-min-day3" class="result-item" style="display:none;"></div>
+            <div id="t1-min-day4" class="result-item" style="display:none;"></div>
+            <div id="t1-min-day5" class="result-item" style="display:none;"></div>
+            <div id="t1-min-day6" class="result-item" style="display:none;"></div>
+            <div id="t1-min-day7" class="result-item" style="display:none;"></div>
+            <div id="t1-min-day8" class="result-item" style="display:none;"></div>
+            <div id="t1-min-total" class="total-price"></div>
+            <div id="t1-min-unit" class="unit-price"></div>
+        </div>
+
+        <div class="result-box" id="t1-result2-container" style="display:none;">
+            <h3>プラン2：お得 (±30枚でのチケット単価最安値)</h3>
+            <div id="t1-best-day1" class="result-item" style="display:none;"></div>
+            <div id="t1-best-day2" class="result-item" style="display:none;"></div>
+            <div id="t1-best-day3" class="result-item" style="display:none;"></div>
+            <div id="t1-best-day4" class="result-item" style="display:none;"></div>
+            <div id="t1-best-day5" class="result-item" style="display:none;"></div>
+            <div id="t1-best-day6" class="result-item" style="display:none;"></div>
+            <div id="t1-best-day7" class="result-item" style="display:none;"></div>
+            <div id="t1-best-day8" class="result-item" style="display:none;"></div>
+            <div id="t1-best-total" class="total-price"></div>
+            <div id="t1-best-unit" class="unit-price"></div>
+        </div>
+    </div>
+
+    <!-- ================= ツール2 ================= -->
+    <div id="tool2-section" class="tool-section">
+        <h2>基本設定</h2>
+        <div class="form-group-full" style="margin-bottom: 12px;">
+            <label>ご予算 (円)</label>
+            <input type="number" id="t2-budget" value="65000" min="0" placeholder="例: 65000">
+        </div>
+        <div class="form-grid-2col">
+            <div class="form-group">
+                <label>引くタイミング</label>
+                <select id="t2-hikutaimingu">
+                    <option value="初週">初週</option>
+                    <option value="初週以外">初週以外</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>ガチャ開始日</label>
+                <input type="date" id="t2-kaishibi">
+            </div>
+        </div>
+
+        <h2>限定殿堂パック残数</h2>
+        <div class="form-grid-2col">
+            <div class="form-group">
+                <label>限定殿堂パック 3枚の残り</label>
+                <select id="t2-pack3">
+                    <option value="0">0</option>
+                    <option value="1" selected>1</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>限定殿堂パック 10枚の残り</label>
+                <select id="t2-pack10">
+                    <option value="0">0</option>
+                    <option value="1" selected>1</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-grid-2col" style="margin-top: 12px;">
+            <div class="form-group">
+                <label>限定殿堂パック 50枚の残り</label>
+                <select id="t2-pack50">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3" selected>3</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>限定殿堂パック 90枚の残り</label>
+                <select id="t2-pack90">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3" selected>3</option>
+                </select>
+            </div>
+        </div>
+
+        <h2>チャージ特典</h2>
+        <div class="form-grid-2col">
+            <div class="form-group">
+                <label>還元条件1</label>
+                <input type="text" id="t2-kangen-1" value="6480有償で30枚" readonly style="background-color: #f0f0f0;">
+            </div>
+            <div class="form-group">
+                <label>日数1</label>
+                <select id="t2-nissuu-1">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-grid-2col" style="margin-top: 12px;">
+            <div class="form-group">
+                <label>還元条件2</label>
+                <input type="text" id="t2-kangen-2" value="1280有償で10枚" readonly style="background-color: #f0f0f0;">
+            </div>
+            <div class="form-group">
+                <label>日数2</label>
+                <select id="t2-nissuu-2">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="button" id="t2-calc-btn" class="calc-btn">予算内で最適化して計算</button>
+
+        <!-- プラン1 -->
+        <div class="result-box" id="t2-result1-container" style="display:none;">
+            <h3>予算-5,000円〜予算で最大チケット</h3>
+            <div id="t2-res1-day1" class="result-item" style="display:none;"></div>
+            <div id="t2-res1-day2" class="result-item" style="display:none;"></div>
+            <div id="t2-res1-day3" class="result-item" style="display:none;"></div>
+            <div id="t2-res1-day4" class="result-item" style="display:none;"></div>
+            <div id="t2-res1-day5" class="result-item" style="display:none;"></div>
+            <div id="t2-res1-day6" class="result-item" style="display:none;"></div>
+            <div id="t2-res1-day7" class="result-item" style="display:none;"></div>
+            <div id="t2-res1-day8" class="result-item" style="display:none;"></div>
+            <div id="t2-res1-total" class="total-price"></div>
+            <div id="t2-res1-unit" class="unit-price"></div>
+            <div id="t2-res1-gacha" class="gacha-count"></div>
+        </div>
+
+        <!-- プラン2 -->
+        <div class="result-box" id="t2-result2-container" style="display:none;">
+            <h3>予算-1万円〜予算でチケット単価最安値</h3>
+            <div id="t2-res2-day1" class="result-item" style="display:none;"></div>
+            <div id="t2-res2-day2" class="result-item" style="display:none;"></div>
+            <div id="t2-res2-day3" class="result-item" style="display:none;"></div>
+            <div id="t2-res2-day4" class="result-item" style="display:none;"></div>
+            <div id="t2-res2-day5" class="result-item" style="display:none;"></div>
+            <div id="t2-res2-day6" class="result-item" style="display:none;"></div>
+            <div id="t2-res2-day7" class="result-item" style="display:none;"></div>
+            <div id="t2-res2-day8" class="result-item" style="display:none;"></div>
+            <div id="t2-res2-total" class="total-price"></div>
+            <div id="t2-res2-unit" class="unit-price"></div>
+            <div id="t2-res2-gacha" class="gacha-count"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function switchTab(toolName) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tool-section').forEach(sec => sec.classList.remove('active'));
+  
+  if (toolName === 'tool1') {
+    document.querySelector('.tab-menu button:nth-child(1)').classList.add('active');
+    document.getElementById('tool1-section').classList.add('active');
+  } else {
+    document.querySelector('.tab-menu button:nth-child(2)').classList.add('active');
+    document.getElementById('tool2-section').classList.add('active');
+  }
+}
+
+/* ================= ツール1 ロジック ================= */
+function t1_getVal(id) {
+  const el = document.getElementById("t1-" + id);
+  return el ? el.value : "";
+}
+
+function t1_getNum(id, maxLimit = 999999) {
+  const el = document.getElementById("t1-" + id);
+  if (!el) return 0;
+  const val = parseInt(String(el.value).replace(/,/g, ""), 10);
+  return isNaN(val) ? 0 : Math.min(Math.max(val, 0), maxLimit);
+}
+
+function t1_parseDate(id) {
+  const raw = String(t1_getVal(id)).trim();
+  if (!raw) return new Date();
+  const clean = raw.replace(/[^0-9]/g, "");
+  if (clean.length === 8) {
+    const y = parseInt(clean.slice(0, 4), 10);
+    const m = parseInt(clean.slice(4, 6), 10) - 1;
+    const d = parseInt(clean.slice(6, 8), 10);
+    return new Date(y, m, d);
+  }
+  const parsed = new Date(raw);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+function t1_formatDate(d) {
+  const days = ['日', '月', '火', '水', '木', '金', '土'];
+  return `${d.getMonth() + 1}/${d.getDate()}(${days[d.getDay()]})`;
+}
+
+function t1_getWeekIdentifier(dateObj) {
+  const d = new Date(dateObj);
+  const day = d.getDay();
+  const diffToMon = (day === 0 ? -6 : 1 - day);
+  const mon = new Date(d);
+  mon.setDate(d.getDate() + diffToMon);
+  return mon.toISOString().slice(0, 10);
+}
+
+const t1_rewardSteps = [
+  { threshold: 180, tickets: 2 },
+  { threshold: 680, tickets: 3 },
+  { threshold: 1280, tickets: 5 },
+  { threshold: 3280, tickets: 10 },
+  { threshold: 6480, tickets: 10 }
+];
+
+function t1_getBonusTicketsForPaid(paidAmount) {
+  let totalBonus = 0;
+  for (let step of t1_rewardSteps) {
+    if (paidAmount >= step.threshold) {
+      totalBonus += step.tickets;
+    }
+  }
+  return totalBonus;
+}
+
+function t1_getOptimalChargeComposition(targetPaid, useWeekly) {
+  if (targetPaid <= 0) {
+    return { price: 0, paid: 0, totalTickets: 0, breakdown: [], achievedPaid: 0 };
+  }
+
+  if (useWeekly && targetPaid >= 5000) {
+    let paid = 5000;
+    let price = 10000;
+    let totalTickets = Math.floor(6280/100);
+    let breakdown = ["毎週1回限りお得パック(6280金券)×1"];
+
+    let counts = { "10,000円パック": 0, "2,400円パック": 0, "480円パック": 0, "160円パック": 0 };
+    while (paid < targetPaid) {
+      if (targetPaid - paid >= 5000) {
+        paid += 5000; price += 10000; totalTickets += Math.floor(5780/100); counts["10,000円パック"]++;
+      } else if (targetPaid - paid >= 1200) {
+        paid += 1200; price += 2400; totalTickets += Math.floor(1325/100); counts["2,400円パック"]++;
+      } else if (targetPaid - paid >= 240) {
+        paid += 240; price += 480; totalTickets += Math.floor(252/100); counts["480円パック"]++;
+      } else {
+        paid += 80; price += 160; totalTickets += Math.floor(85/100); counts["160円パック"]++;
+      }
+    }
+    Object.keys(counts).forEach(k => {
+      if (counts[k] > 0) breakdown.push(`${k}×${counts[k]}`);
+    });
+    let bonus = t1_getBonusTicketsForPaid(paid);
+    return { price, paid, totalTickets: totalTickets + bonus, breakdown, achievedPaid: targetPaid };
+  }
+
+  let paid = 0;
+  let price = 0;
+  let totalTickets = 0;
+  let counts = { "10,000円パック": 0, "2,400円パック": 0, "480円パック": 0, "160円パック": 0 };
+
+  while (paid < targetPaid) {
+    if (targetPaid - paid >= 5000) {
+      paid += 5000; price += 10000; totalTickets += Math.floor(5780/100); counts["10,000円パック"]++;
+    } else if (targetPaid - paid >= 1200) {
+      paid += 1200; price += 2400; totalTickets += Math.floor(1325/100); counts["2,400円パック"]++;
+    } else if (targetPaid - paid >= 240) {
+      paid += 240; price += 480; totalTickets += Math.floor(252/100); counts["480円パック"]++;
+    } else {
+      paid += 80; price += 160; totalTickets += Math.floor(85/100); counts["160円パック"]++;
+    }
+  }
+
+  let breakdown = [];
+  Object.keys(counts).forEach(k => {
+    if (counts[k] > 0) breakdown.push(`${k}×${counts[k]}`);
+  });
+
+  let bonus = t1_getBonusTicketsForPaid(paid);
+  return { price, paid, totalTickets: totalTickets + bonus, breakdown, achievedPaid: targetPaid };
+}
+
+function t1_generateChargeSequences(maxCaps) {
+  const steps = [0, 180, 680, 1280, 3280, 6480];
+  let results = [];
+
+  function backtrack(dayIdx, currentSeq, prevVal) {
+    if (dayIdx === maxCaps.length) {
+      let trimmed = [...currentSeq];
+      while (trimmed.length > 0 && trimmed[trimmed.length - 1] === 0) {
+        trimmed.pop();
+      }
+      if (!trimmed.includes(0)) {
+        results.push(trimmed);
+      }
+      return;
+    }
+    const cap = maxCaps[dayIdx];
+    const validSteps = [...new Set([...steps, cap])].filter(s => s <= cap && s <= prevVal).sort((a,b) => b - a);
+    for (let s of validSteps) {
+      currentSeq.push(s);
+      backtrack(dayIdx + 1, currentSeq, s);
+      currentSeq.pop();
+    }
+  }
+
+  backtrack(0, [], 999999);
+  const uniqueMap = new Map();
+  for (let seq of results) {
+    uniqueMap.set(seq.join(','), seq);
+  }
+  return Array.from(uniqueMap.values());
+}
+
+function t1_simulateDay1WithOptions(mode, day1TargetPaid, minDay1Tickets, maxDay1Tickets, limitedPacks, dayDate, weeklyUsedMap) {
+  let availablePacks = [];
+  let currentPacks = JSON.parse(JSON.stringify(limitedPacks));
+  currentPacks.forEach(p => {
+    let limit = (p.tickets === 3 || p.tickets === 10) ? Math.min(p.remain, 1) : Math.min(p.remain, 3);
+    for(let i=0; i<limit; i++) {
+      availablePacks.push({ name: p.name, price: p.price, tickets: p.tickets });
+    }
+  });
+
+  const normalPool = [
+    { name: "10,000円パック", price: 10000, tickets: Math.floor(5780/100) },
+    { name: "5,000円パック", price: 5000, tickets: Math.floor(2840/100) },
+    { name: "2,400円パック", price: 2400, tickets: Math.floor(1325/100) },
+    { name: "1,500円パック", price: 1500, tickets: Math.floor(820/100) },
+    { name: "480円パック", price: 480, tickets: Math.floor(252/100) }
+  ];
+
+  let sortedLimited = [...availablePacks].sort((a,b) => (a.price/a.tickets) - (b.price/b.tickets));
+
+  let bestVal = 1e15;
+  let bestResult = null;
+
+  const weekKey = t1_getWeekIdentifier(dayDate);
+  const canUseWeekly = !weeklyUsedMap.has(weekKey) && (day1TargetPaid >= 5000);
+  const weeklyOptions = (canUseWeekly ? [1, 0] : [0]);
+
+  for (let useWeekly of weeklyOptions) {
+    const chargeRes = t1_getOptimalChargeComposition(day1TargetPaid, useWeekly === 1);
+
+    let candidateSubsets = [];
+    for (let i = 0; i <= sortedLimited.length; i++) {
+      candidateSubsets.push(sortedLimited.slice(0, i));
+    }
+    if (mode === 'best') {
+      for (let mask = 0; mask < (1 << sortedLimited.length); mask++) {
+        let sub = [];
+        for (let j = 0; j < sortedLimited.length; j++) {
+          if ((mask & (1 << j)) !== 0) sub.push(sortedLimited[j]);
+        }
+        candidateSubsets.push(sub);
+      }
+    }
+
+    for (let subPacks of candidateSubsets) {
+      let subPrice = chargeRes.price;
+      let subTickets = chargeRes.totalTickets;
+      let subPackList = [];
+      let subBreakdown = [...chargeRes.breakdown];
+
+      subPacks.forEach(p => {
+        subPrice += p.price;
+        subTickets += p.tickets;
+        subPackList.push(p.name);
+      });
+
+      if (subTickets < minDay1Tickets) {
+        let needed = minDay1Tickets - subTickets;
+        let addedMap = {};
+        while (needed > 0) {
+          let sel = normalPool[0];
+          if (needed <= 3) sel = normalPool[4];
+          else if (needed <= 8) sel = normalPool[3];
+          else if (needed <= 14) sel = normalPool[2];
+          else if (needed <= 28) sel = normalPool[1];
+
+          subPrice += sel.price;
+          subTickets += sel.tickets;
+          needed -= sel.tickets;
+          addedMap[sel.name] = (addedMap[sel.name] || 0) + 1;
+        }
+        Object.keys(addedMap).forEach(k => {
+          subBreakdown.push(`${k}×${addedMap[k]}`);
+        });
+      }
+
+      if (subTickets >= minDay1Tickets && subTickets <= maxDay1Tickets) {
+        let packSummary = {};
+        subPackList.forEach(name => { packSummary[name] = (packSummary[name] || 0) + 1; });
+        let packStrs = [];
+        Object.keys(packSummary).forEach(k => packStrs.push(`${k}×${packSummary[k]}`));
+
+        if (mode === 'min') {
+          if (subPrice < bestVal || (subPrice === bestVal && (!bestResult || subTickets > bestResult.totalTickets))) {
+            bestVal = subPrice;
+            bestResult = {
+              price: subPrice,
+              totalTickets: subTickets,
+              breakdown: subBreakdown,
+              packList: packStrs,
+              achievedPaid: day1TargetPaid,
+              usedWeekly: (useWeekly === 1)
+            };
+          }
+        } else {
+          let unitPrice = subTickets > 0 ? (subPrice / subTickets) : 1e15;
+          if (unitPrice < bestVal || (Math.abs(unitPrice - bestVal) < 0.0001 && (!bestResult || subTickets > bestResult.totalTickets))) {
+            bestVal = unitPrice;
+            bestResult = {
+              price: subPrice,
+              totalTickets: subTickets,
+              breakdown: subBreakdown,
+              packList: packStrs,
+              achievedPaid: day1TargetPaid,
+              usedWeekly: (useWeekly === 1)
+            };
+          }
+        }
+      }
+    }
+  }
+
+  return bestResult;
+}
+
+function t1_simulateLaterDays(seq, startDate, limitedPacks, weeklyUsedMap) {
+  let schedule = [];
+  let totalTickets = 0;
+  let totalPrice = 0;
+  const baseDate = new Date(startDate);
+
+  for (let idx = 1; idx < seq.length; idx++) {
+    const d = new Date(baseDate);
+    d.setDate(d.getDate() + idx);
+    const weekKey = t1_getWeekIdentifier(d);
+    const targetPaid = seq[idx];
+
+    let bestResForDay = null;
+    let minPriceForDay = 1e15;
+
+    const canUseWeekly = !weeklyUsedMap.has(weekKey) && (targetPaid >= 5000);
+
+    for (let useWeekly = (canUseWeekly ? [1, 0] : [0]); useWeekly >= 0; useWeekly--) {
+      const res = t1_getOptimalChargeComposition(targetPaid, useWeekly === 1);
+      if (res.price < minPriceForDay) {
+        minPriceForDay = res.price;
+        bestResForDay = { ...res, usedWeekly: (useWeekly === 1), dateObj: d };
+      }
+    }
+
+    if (!bestResForDay) {
+      const res = t1_getOptimalChargeComposition(targetPaid, false);
+      bestResForDay = { ...res, usedWeekly: false, dateObj: d };
+    }
+
+    if (bestResForDay.usedWeekly) {
+      weeklyUsedMap.add(weekKey);
+    }
+
+    totalTickets += bestResForDay.totalTickets;
+    totalPrice += bestResForDay.price;
+
+    schedule.push({
+      dateObj: d,
+      dateStr: t1_formatDate(d),
+      desc: `チャージ特典 (${bestResForDay.achievedPaid}金券達成) ・ [${bestResForDay.breakdown.join(' ・ ')}]`,
+      tickets: bestResForDay.totalTickets,
+      price: bestResForDay.price,
+      usedWeekly: bestResForDay.usedWeekly,
+      weekKey: weekKey
+    });
+  }
+
+  return { schedule, totalTickets, totalPrice };
+}
+
+function t1_buildScheduleForMode(mode, netTargetTickets, startDate, cond1, t1, days1, cond2, t2, days2, limitedPacks) {
+  const baseDate = new Date(startDate);
+  const tolMin = (mode === 'min') ? 10 : 30;
+  const tolMax = (mode === 'min') ? 20 : 30;
+  const globalMinTickets = Math.max(0, netTargetTickets - tolMin);
+  const globalMaxTickets = netTargetTickets + tolMax;
+
+  const maxCaps = [];
+  for (let i = 0; i < days1; i++) maxCaps.push(cond1);
+  for (let i = 0; i < days2; i++) maxCaps.push(cond2);
+  maxCaps.sort((a, b) => b - a);
+
+  const candidateSequences = t1_generateChargeSequences(maxCaps);
+
+  let bestScore = 1e15;
+  let bestDaysCount = 999;
+  let bestScheduleData = null;
+
+  for (let seq of candidateSequences) {
+    const activeDays = seq.length;
+    if (activeDays === 0) continue;
+
+    let seqWeeklyMap = new Set();
+    const d0 = new Date(baseDate);
+    const d0Week = t1_getWeekIdentifier(d0);
+
+    let laterRes = t1_simulateLaterDays(seq, startDate, limitedPacks, seqWeeklyMap);
+    let remMin = Math.max(0, globalMinTickets - laterRes.totalTickets);
+    let remMax = globalMaxTickets - laterRes.totalTickets;
+
+    if (remMax < 0) continue;
+
+    const day1TargetPaid = seq[0];
+    const day1Res = t1_simulateDay1WithOptions(mode, day1TargetPaid, remMin, remMax, limitedPacks, d0, seqWeeklyMap);
+    if (!day1Res) continue;
+
+    if (day1Res.usedWeekly) {
+      seqWeeklyMap.add(d0Week);
+    }
+
+    let finalLaterRes = t1_simulateLaterDays(seq, startDate, limitedPacks, seqWeeklyMap);
+
+    const totalTickets = day1Res.totalTickets + finalLaterRes.totalTickets;
+    const totalPrice = day1Res.price + finalLaterRes.totalPrice;
+    const actualDays = Math.max(1, activeDays);
+
+    if (totalTickets >= globalMinTickets && totalTickets <= globalMaxTickets) {
+      let isBetter = false;
+
+      if (mode === 'min') {
+        if (totalPrice < bestScore) {
+          isBetter = true;
+        } else if (totalPrice === bestScore) {
+          if (actualDays < bestDaysCount) {
+            isBetter = true;
+          } else if (actualDays === bestDaysCount && (!bestScheduleData || totalTickets > bestScheduleData.totalTickets)) {
+            isBetter = true;
+          }
+        }
+      } else {
+        const unitPrice = totalTickets > 0 ? (totalPrice / totalTickets) : 1e15;
+        if (unitPrice < bestScore) {
+          isBetter = true;
+        } else if (Math.abs(unitPrice - bestScore) < 0.0001) {
+          if (totalTickets > (bestScheduleData ? bestScheduleData.totalTickets : 0)) {
+            isBetter = true;
+          }
+        }
+      }
+
+      if (isBetter) {
+        bestScore = (mode === 'min') ? totalPrice : (totalTickets > 0 ? (totalPrice / totalTickets) : 1e15);
+        bestDaysCount = actualDays;
+
+        const schedule = [];
+        let descParts0 = [];
+        if (day1Res.packList && day1Res.packList.length > 0) {
+          descParts0.push(`限定パック [${day1Res.packList.join(' ・ ')}]`);
+        }
+        if (day1Res.breakdown && day1Res.breakdown.length > 0) {
+          const label = day1Res.achievedPaid > 0 ? `チャージ特典 (${day1Res.achievedPaid}金券達成)` : `追加パック構成`;
+          descParts0.push(`${label} ・ [${day1Res.breakdown.join(' ・ ')}]`);
+        }
+        if (descParts0.length === 0) descParts0.push("購入なし (手持ち分で達成)");
+
+        schedule.push({
+          dateStr: t1_formatDate(d0),
+          desc: descParts0.join(' ＋ '),
+          tickets: day1Res.totalTickets,
+          price: day1Res.price
+        });
+
+        finalLaterRes.schedule.forEach(row => {
+          schedule.push(row);
+        });
+
+        bestScheduleData = {
+          schedule: schedule,
+          totalTickets: totalTickets,
+          totalPrice: totalPrice
+        };
+      }
+    }
+  }
+
+  return bestScheduleData;
+}
+
+function t1_outputResult(prefix, data, netTargetTickets) {
+  const container = document.getElementById('t1-' + (prefix === 'min' ? 'result1-container' : 'result2-container'));
+  if (container) container.style.display = "block";
+
+  if (!data) return;
+
+  for (let i = 1; i <= 8; i++) {
+    const el = document.getElementById(`t1-${prefix}-day${i}`);
+    if (el) {
+      const row = data.schedule[i - 1];
+      if (row) {
+        el.textContent = `${i}日目 (${row.dateStr})：${row.desc} ／ +${row.tickets}枚 ／ ${row.price.toLocaleString()}円`;
+        el.style.display = "block";
+      } else {
+        el.textContent = "";
+        el.style.display = "none";
+      }
+    }
+  }
+
+  const totalEl = document.getElementById(`t1-${prefix}-total`);
+  if (totalEl) {
+    totalEl.textContent = `目標必要枚数: ${netTargetTickets}枚 / 合計獲得: ${data.totalTickets}枚 / 合計金額: ${data.totalPrice.toLocaleString()}円`;
+  }
+
+  const unitEl = document.getElementById(`t1-${prefix}-unit`);
+  if (unitEl) {
+    const unitPrice = data.totalTickets > 0 ? (data.totalPrice / data.totalTickets).toFixed(1) : 0;
+    unitEl.textContent = `殿堂チケット1枚あたりの値段： 約 ${unitPrice} 円/枚`;
+  }
+}
+
+function t1_keisanJikkou() {
+  try {
+    const dendo = String(t1_getVal("hoshidendo"));
+    const haveCrystals = t1_getNum("have-crystals");
+    const timing = String(t1_getVal("hikutaimingu"));
+    const startDate = t1_parseDate("kaishibi");
+
+    const kinken = t1_getNum("kinken");
+    const expoint = t1_getNum("expoint");
+    const tuuzyoupoint = t1_getNum("tuuzyoupoint");
+    const exchiketto = t1_getNum("exchiketto");
+    const tuuzyouchiketto = t1_getNum("tuuzyouchiketto");
+
+    const limitedPacks = [
+      { name: "限定3枚", price: 100, tickets: 3, remain: t1_getNum("pack3", 1) },
+      { name: "限定10枚", price: 1000, tickets: 10, remain: t1_getNum("pack10", 1) },
+      { name: "限定50枚", price: 8300, tickets: 50, remain: t1_getNum("pack50", 3) },
+      { name: "限定90枚", price: 14800, tickets: 90, remain: t1_getNum("pack90", 3) }
+    ];
+
+    const requiredCrystalsTotal = dendo.includes("車") ? 4 : 3;
+    const netNeededCrystals = Math.max(0, requiredCrystalsTotal - haveCrystals);
+
+    const targetNormalPt = netNeededCrystals * 250;
+    const totalRequiredExPt = targetNormalPt * 0.8;
+
+    const isFirstWeek = timing.includes("初週") && !timing.includes("以外");
+    const ticketRate = isFirstWeek ? 0.8 : 1.0;
+    
+    const baseRequiredTickets = Math.ceil(totalRequiredExPt * ticketRate);
+
+    const heldTicketsFromKinken = Math.floor(kinken / 100);
+    const directHeldTickets = exchiketto + tuuzyouchiketto + heldTicketsFromKinken;
+    
+    const heldExPtFromNormal = tuuzyoupoint * 0.8;
+    const totalHeldExPt = expoint + heldExPtFromNormal;
+    const heldTicketsFromPt = Math.floor(totalHeldExPt * ticketRate);
+    
+    const heldDeductionTickets = directHeldTickets + heldTicketsFromPt;
+    const netTargetTickets = Math.max(0, baseRequiredTickets - heldDeductionTickets);
+
+    const [t1, cond1] = [30, 6480];
+    const days1 = t1_getNum("nissuu-1");
+    const [t2, cond2] = [10, 1280];
+    const days2 = t1_getNum("nissuu-2");
+
+    const plan1 = t1_buildScheduleForMode('min', netTargetTickets, startDate, cond1, t1, days1, cond2, t2, days2, limitedPacks);
+    const plan2 = t1_buildScheduleForMode('best', netTargetTickets, startDate, cond1, t1, days1, cond2, t2, days2, limitedPacks);
+
+    t1_outputResult("min", plan1, netTargetTickets);
+    t1_outputResult("best", plan2, netTargetTickets);
+  } catch (e) {
+    console.error(e);
+    alert("計算結果の算出時にエラーが発生しました: " + e.message);
+  }
+}
+
+
+/* ================= ツール2 ロジック ================= */
+function t2_getVal(id) {
+  const el = document.getElementById("t2-" + id);
+  return el ? el.value : "";
+}
+
+function t2_getNum(id) {
+  const el = document.getElementById("t2-" + id);
+  if (!el) return 0;
+  const val = parseInt(String(el.value).replace(/,/g, ""), 10);
+  return isNaN(val) ? 0 : Math.max(0, val);
+}
+
+function t2_parseKangen(id) {
+  const str = String(t2_getVal(id)).replace(/,/g, "");
+  const nums = str.match(/\d+/g);
+  if (!nums || nums.length < 2) return [0, 6480];
+  return [parseInt(nums[1], 10), parseInt(nums[0], 10)];
+}
+
+function t2_parseDate(id) {
+  const raw = String(t2_getVal(id)).trim();
+  if (!raw) return new Date();
+  const clean = raw.replace(/[^0-9]/g, "");
+  if (clean.length === 8) {
+    const y = parseInt(clean.slice(0, 4), 10);
+    const m = parseInt(clean.slice(4, 6), 10) - 1;
+    const d = parseInt(clean.slice(6, 8), 10);
+    return new Date(y, m, d);
+  }
+  const parsed = new Date(raw);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+function t2_formatDate(d) {
+  const days = ['日', '月', '火', '水', '木', '金', '土'];
+  return `${d.getMonth() + 1}/${d.getDate()}(${days[d.getDay()]})`;
+}
+
+function t2_getWeekIdentifier(dateObj) {
+  const d = new Date(dateObj);
+  const day = d.getDay();
+  const diffToMon = (day === 0 ? -6 : 1 - day);
+  const mon = new Date(d);
+  mon.setDate(d.getDate() + diffToMon);
+  return mon.toISOString().slice(0, 10);
+}
+
+const t2_rewardSteps = [
+  { threshold: 180, tickets: 2 },
+  { threshold: 680, tickets: 3 },
+  { threshold: 1280, tickets: 5 },
+  { threshold: 3280, tickets: 10 },
+  { threshold: 6480, tickets: 10 }
+];
+
+function t2_getBonusTicketsForPaid(paidAmount) {
+  let totalBonus = 0;
+  for (let step of t2_rewardSteps) {
+    if (paidAmount >= step.threshold) {
+      totalBonus += step.tickets;
+    }
+  }
+  return totalBonus;
+}
+
+function t2_getOptimalChargeComposition(targetPaid, useWeekly) {
+  if (targetPaid <= 0) {
+    return { price: 0, paid: 0, totalTickets: 0, breakdown: [], achievedPaid: 0, usedWeekly: false };
+  }
+
+  if (useWeekly && targetPaid >= 5000) {
+    let paid = 5000;
+    let price = 10000;
+    let totalTickets = Math.floor(6280/100);
+    let breakdown = ["毎週1回限りお得パック(6280金券)×1"];
+
+    let counts = { "10,000円パック": 0, "2,400円パック": 0, "480円パック": 0, "160円パック": 0 };
+    while (paid < targetPaid) {
+      if (targetPaid - paid >= 5000) {
+        paid += 5000; price += 10000; totalTickets += Math.floor(5780/100); counts["10,000円パック"]++;
+      } else if (targetPaid - paid >= 1200) {
+        paid += 1200; price += 2400; totalTickets += Math.floor(1325/100); counts["2,400円パック"]++;
+      } else if (targetPaid - paid >= 240) {
+        paid += 240; price += 480; totalTickets += Math.floor(252/100); counts["480円パック"]++;
+      } else {
+        paid += 80; price += 160; totalTickets += Math.floor(85/100); counts["160円パック"]++;
+      }
+    }
+    Object.keys(counts).forEach(k => {
+      if (counts[k] > 0) breakdown.push(`${k}×${counts[k]}`);
+    });
+    let bonus = t2_getBonusTicketsForPaid(paid);
+    return { price, paid, totalTickets: totalTickets + bonus, breakdown, achievedPaid: targetPaid, usedWeekly: true };
+  }
+
+  let paid = 0;
+  let price = 0;
+  let totalTickets = 0;
+  let counts = { "10,000円パック": 0, "2,400円パック": 0, "480円パック": 0, "160円パック": 0 };
+
+  while (paid < targetPaid) {
+    if (targetPaid - paid >= 5000) {
+      paid += 5000; price += 10000; totalTickets += Math.floor(5780/100); counts["10,000円パック"]++;
+    } else if (targetPaid - paid >= 1200) {
+      paid += 1200; price += 2400; totalTickets += Math.floor(1325/100); counts["2,400円パック"]++;
+    } else if (targetPaid - paid >= 240) {
+      paid += 240; price += 480; totalTickets += Math.floor(252/100); counts["480円パック"]++;
+    } else {
+      paid += 80; price += 160; totalTickets += Math.floor(85/100); counts["160円パック"]++;
+    }
+  }
+
+  let breakdown = [];
+  Object.keys(counts).forEach(k => {
+    if (counts[k] > 0) breakdown.push(`${k}×${counts[k]}`);
+  });
+
+  let bonus = t2_getBonusTicketsForPaid(paid);
+  return { price, paid, totalTickets: totalTickets + bonus, breakdown, achievedPaid: targetPaid, usedWeekly: false };
+}
+
+function t2_generateChargeSequences(maxCaps) {
+  const steps = [0, 180, 680, 1280, 3280, 6480];
+  let results = [];
+
+  function backtrack(dayIdx, currentSeq, prevVal) {
+    if (dayIdx === maxCaps.length) {
+      let trimmed = [...currentSeq];
+      while (trimmed.length > 0 && trimmed[trimmed.length - 1] === 0) {
+        trimmed.pop();
+      }
+      if (!trimmed.includes(0)) {
+        results.push(trimmed);
+      }
+      return;
+    }
+    const cap = maxCaps[dayIdx];
+    const validSteps = [...new Set([...steps, cap])].filter(s => s <= cap && s <= prevVal).sort((a,b) => b - a);
+    for (let s of validSteps) {
+      currentSeq.push(s);
+      backtrack(dayIdx + 1, currentSeq, s);
+      currentSeq.pop();
+    }
+  }
+
+  backtrack(0, [], 999999);
+  const uniqueMap = new Map();
+  for (let seq of results) {
+    uniqueMap.set(seq.join(','), seq);
+  }
+  return Array.from(uniqueMap.values());
+}
+
+function t2_solvePlans(budget, maxCaps, limitedPacks, startDate) {
+  const candidateSequences = t2_generateChargeSequences(maxCaps);
+  let allValidPlans = [];
+
+  const maxR3 = Math.min(1, limitedPacks.find(p => p.name === "限定3枚").remain);
+  const maxR10 = Math.min(1, limitedPacks.find(p => p.name === "限定10枚").remain);
+  const maxR50 = Math.min(3, limitedPacks.find(p => p.name === "限定50枚").remain);
+  const maxR90 = Math.min(3, limitedPacks.find(p => p.name === "限定90枚").remain);
+
+  let packCombos = [];
+  for (let n90 = 0; n90 <= maxR90; n90++) {
+    for (let n50 = 0; n50 <= maxR50; n50++) {
+      for (let n10 = 0; n10 <= maxR10; n10++) {
+        for (let n3 = 0; n3 <= maxR3; n3++) {
+          let pCost = n90 * 14800 + n50 * 8300 + n10 * 1000 + n3 * 100;
+          let pTicks = n90 * 90 + n50 * 50 + n10 * 10 + n3 * 3;
+          if (n90 > 0 || n50 > 0 || n10 > 0 || n3 > 0) {
+            packCombos.push({ n90, n50, n10, n3, cost: pCost, tickets: pTicks });
+          }
+        }
+      }
+    }
+  }
+  packCombos.push({ n90: 0, n50: 0, n10: 0, n3: 0, cost: 0, tickets: 0 });
+
+  for (let seq of candidateSequences) {
+    for (let pCombo of packCombos) {
+      let weeklyUsedMap = new Set();
+      let totalSpent = 0;
+      let totalTickets = 0;
+      let schedule = [];
+      let possible = true;
+
+      for (let idx = 0; idx < seq.length; idx++) {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + idx);
+        const weekKey = t2_getWeekIdentifier(d);
+        const targetPaid = seq[idx];
+
+        const canUseWeekly = !weeklyUsedMap.has(weekKey) && (targetPaid >= 5000);
+        
+        let bestDayRes = null;
+        let minDayPrice = Infinity;
+
+        for (let uw = (canUseWeekly ? 1 : 0); uw >= 0; uw--) {
+          const res = t2_getOptimalChargeComposition(targetPaid, uw === 1);
+          if (res.price < minDayPrice) {
+            minDayPrice = res.price;
+            bestDayRes = res;
+          }
+        }
+
+        if (bestDayRes.usedWeekly) {
+          weeklyUsedMap.add(weekKey);
+        }
+
+        let dayPrice = bestDayRes.price;
+        let dayTickets = bestDayRes.totalTickets;
+        let dayPacksList = [];
+        let dayBreakdown = [...bestDayRes.breakdown];
+
+        if (idx === 0 && (pCombo.cost > 0)) {
+          dayPrice += pCombo.cost;
+          dayTickets += pCombo.tickets;
+          if (pCombo.n90 > 0) dayPacksList.push(`限定90枚×${pCombo.n90}`);
+          if (pCombo.n50 > 0) dayPacksList.push(`限定50枚×${pCombo.n50}`);
+          if (pCombo.n10 > 0) dayPacksList.push(`限定10枚×${pCombo.n10}`);
+          if (pCombo.n3 > 0) dayPacksList.push(`限定3枚×${pCombo.n3}`);
+        }
+
+        if (totalSpent + dayPrice > budget) {
+          possible = false;
+          break;
+        }
+
+        totalSpent += dayPrice;
+        totalTickets += dayTickets;
+
+        let descParts = [];
+        if (dayPacksList.length > 0) {
+          descParts.push(`限定パック [${dayPacksList.join(' ・ ')}]`);
+        }
+        if (dayBreakdown.length > 0) {
+          const label = bestDayRes.achievedPaid > 0 ? `チャージ特典分 (${bestDayRes.achievedPaid}金券達成)` : `追加パック構成`;
+          descParts.push(`${label} [${dayBreakdown.join(' ・ ')}]`);
+        }
+        if (descParts.length === 0) descParts.push("購入なし");
+
+        schedule.push({
+          dateStr: t2_formatDate(d),
+          desc: descParts.join(' ＋ '),
+          tickets: dayTickets,
+          price: dayPrice
+        });
+      }
+
+      if (possible && totalTickets > 0 && totalSpent <= budget) {
+        allValidPlans.push({ schedule, totalTickets, totalPrice: totalSpent, daysCount: seq.length });
+      }
+    }
+  }
+
+  if (allValidPlans.length === 0) return { plan1: null, plan2: null };
+
+  const minRangeP1 = Math.max(0, budget - 5000);
+  let plan1Candidates = allValidPlans.filter(p => p.totalPrice >= minRangeP1 && p.totalPrice <= budget);
+
+  if (plan1Candidates.length === 0) {
+    plan1Candidates = [...allValidPlans].sort((a, b) => Math.abs(b.totalPrice - budget) - Math.abs(a.totalPrice - budget));
+  }
+
+  plan1Candidates.sort((a, b) => {
+    if (b.totalTickets !== a.totalTickets) return b.totalTickets - a.totalTickets;
+    return b.totalPrice - a.totalPrice;
+  });
+  const plan1 = plan1Candidates[0];
+
+  const minRangeP2 = Math.max(0, budget - 10000);
+  let plan2Candidates = allValidPlans.filter(p => p.totalPrice >= minRangeP2 && p.totalPrice <= budget);
+
+  if (plan2Candidates.length === 0) {
+    plan2Candidates = [...allValidPlans].sort((a, b) => Math.abs(a.totalPrice - (budget - 5000)) - Math.abs(b.totalPrice - (budget - 5000)));
+  }
+
+  plan2Candidates.sort((a, b) => {
+    let unitA = a.totalPrice / a.totalTickets;
+    let unitB = b.totalPrice / b.totalTickets;
+    if (Math.abs(unitA - unitB) > 0.001) return unitA - unitB;
+    return b.totalTickets - a.totalTickets;
+  });
+  const plan2 = plan2Candidates[0];
+
+  return { plan1, plan2 };
+}
+
+function t2_keisanBudgetOptimal() {
+  try {
+    const budget = t2_getNum("budget");
+    if (budget <= 0) {
+      alert("有効な予算を入力してください。");
+      return;
+    }
+
+    const timing = String(t2_getVal("hikutaimingu"));
+    const isFirstWeek = timing.includes("初週");
+    const timingLabel = isFirstWeek ? "初週" : "初週以外";
+
+    const startDate = t2_parseDate("kaishibi");
+    const [t1, cond1] = t2_parseKangen("kangen-1");
+    let days1 = t2_getNum("nissuu-1");
+    if (days1 < 0) days1 = 0; if (days1 > 4) days1 = 4;
+    
+    const [t2, cond2] = t2_parseKangen("kangen-2");
+    let days2 = t2_getNum("nissuu-2");
+    if (days2 < 0) days2 = 0; if (days2 > 4) days2 = 4;
+
+    const limitedPacks = [
+      { name: "限定3枚", price: 100, tickets: 3, remain: Math.min(1, Math.max(0, t2_getNum("pack3"))) },
+      { name: "限定10枚", price: 1000, tickets: 10, remain: Math.min(1, Math.max(0, t2_getNum("pack10"))) },
+      { name: "限定50枚", price: 8300, tickets: 50, remain: Math.min(3, Math.max(0, t2_getNum("pack50"))) },
+      { name: "限定90枚", price: 14800, tickets: 90, remain: Math.min(3, Math.max(0, t2_getNum("pack90"))) }
+    ];
+
+    const { plan1, plan2 } = t2_solvePlans(budget, (() => {
+      const mc = [];
+      for (let i = 0; i < days1; i++) mc.push(cond1);
+      for (let i = 0; i < days2; i++) mc.push(cond2);
+      mc.sort((a, b) => b - a);
+      return mc;
+    })(), limitedPacks, startDate);
+
+    if (!plan1) {
+      alert("入力されたご予算では最小構成の購入もできません。予算を増やしてください。");
+      return;
+    }
+
+    // プラン1の描画
+    const c1 = document.getElementById('t2-result1-container');
+    if (c1) c1.style.display = "block";
+    for (let i = 1; i <= 8; i++) {
+      const el = document.getElementById(`t2-res1-day${i}`);
+      if (el) {
+        if (plan1.schedule[i - 1]) {
+          const row = plan1.schedule[i - 1];
+          el.textContent = `${i}日目 (${row.dateStr})：${row.desc} ／ +${row.tickets}枚 ／ ${row.price.toLocaleString()}円`;
+          el.style.display = "block";
+        } else {
+          el.textContent = "";
+          el.style.display = "none";
+        }
+      }
+    }
+    document.getElementById('t2-res1-total').textContent = `合計獲得チケット: ${plan1.totalTickets}枚 / 合計金額: ${plan1.totalPrice.toLocaleString()}円 (予算残額: ${(budget - plan1.totalPrice).toLocaleString()}円)`;
+    let u1 = plan1.totalTickets > 0 ? (plan1.totalPrice / plan1.totalTickets).toFixed(1) : 0;
+    document.getElementById('t2-res1-unit').textContent = `殿堂チケット1枚あたりの値段： 約 ${u1} 円/枚`;
+    
+    let g1 = Math.floor(plan1.totalTickets / (isFirstWeek ? 8 : 10) * 10);
+    document.getElementById('t2-res1-gacha').textContent = `ガチャ換算： 約 ${g1} 連分（${timingLabel}基準）`;
+
+    // プラン2の描画
+    const c2 = document.getElementById('t2-result2-container');
+    if (c2) c2.style.display = "block";
+    for (let i = 1; i <= 8; i++) {
+      const el = document.getElementById(`t2-res2-day${i}`);
+      if (el) {
+        if (plan2.schedule[i - 1]) {
+          const row = plan2.schedule[i - 1];
+          el.textContent = `${i}日目 (${row.dateStr})：${row.desc} ／ +${row.tickets}枚 ／ ${row.price.toLocaleString()}円`;
+          el.style.display = "block";
+        } else {
+          el.textContent = "";
+          el.style.display = "none";
+        }
+      }
+    }
+    document.getElementById('t2-res2-total').textContent = `合計獲得チケット: ${plan2.totalTickets}枚 / 合計金額: ${plan2.totalPrice.toLocaleString()}円 (予算残額: ${(budget - plan2.totalPrice).toLocaleString()}円)`;
+    let u2 = plan2.totalTickets > 0 ? (plan2.totalPrice / plan2.totalTickets).toFixed(1) : 0;
+    document.getElementById('t2-res2-unit').textContent = `殿堂チケット1枚あたりの値段： 約 ${u2} 円/枚`;
+    
+    let g2 = Math.floor(plan2.totalTickets / (isFirstWeek ? 8 : 10) * 10);
+    document.getElementById('t2-res2-gacha').textContent = `ガチャ換算： 約 ${g2} 連分（${timingLabel}基準）`;
+
+  } catch (e) {
+    console.error(e);
+    alert("計算結果の算出時にエラーが発生しました: " + e.message);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  const btn1 = document.getElementById("t1-calc-btn");
+  if (btn1) {
+    btn1.addEventListener("click", function(e) {
+      e.preventDefault();
+      t1_keisanJikkou();
+    });
+  }
+
+  const btn2 = document.getElementById("t2-calc-btn");
+  if (btn2) {
+    btn2.addEventListener("click", function(e) {
+      e.preventDefault();
+      t2_keisanBudgetOptimal();
+    });
+  }
+});
+</script>
+
+</body>
+</html>
