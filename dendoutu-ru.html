@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>荒野行動 ガチャ最適化ツール統合版</title>
+    <title>荒野行動 ガチャ最適化ツール（ガチャベース / 予算ベース）</title>
     <style>
         body {
             font-family: sans-serif;
@@ -145,11 +145,11 @@
 <div class="container">
     <!-- タブ切り替えメニュー -->
     <div class="tab-menu">
-        <button type="button" class="tab-btn active" onclick="switchTab('tool1')">ツール1 (ガチャ最適化)</button>
-        <button type="button" class="tab-btn" onclick="switchTab('tool2')">ツール2 (予算内コスパ最優先)</button>
+        <button type="button" class="tab-btn active" onclick="switchTab('tool1')">ガチャベース</button>
+        <button type="button" class="tab-btn" onclick="switchTab('tool2')">予算ベース</button>
     </div>
 
-    <!-- ================= ツール1 ================= -->
+    <!-- ================= ガチャベース (旧ツール1) ================= -->
     <div id="tool1-section" class="tool-section active">
         <h2>基本設定</h2>
         <div class="form-grid-2col">
@@ -314,7 +314,7 @@
         </div>
     </div>
 
-    <!-- ================= ツール2 ================= -->
+    <!-- ================= 予算ベース (旧ツール2) ================= -->
     <div id="tool2-section" class="tool-section">
         <h2>基本設定</h2>
         <div class="form-group-full" style="margin-bottom: 12px;">
@@ -457,7 +457,7 @@ function switchTab(toolName) {
   }
 }
 
-/* ================= ツール1 ロジック ================= */
+/* ================= ガチャベース ロジック ================= */
 function t1_getVal(id) {
   const el = document.getElementById("t1-" + id);
   return el ? el.value : "";
@@ -490,12 +490,14 @@ function t1_formatDate(d) {
 }
 
 function t1_getWeekIdentifier(dateObj) {
-  const d = new Date(dateObj);
+  const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
   const day = d.getDay();
   const diffToMon = (day === 0 ? -6 : 1 - day);
-  const mon = new Date(d);
-  mon.setDate(d.getDate() + diffToMon);
-  return mon.toISOString().slice(0, 10);
+  d.setDate(d.getDate() + diffToMon);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const date = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${date}`;
 }
 
 const t1_rewardSteps = [
@@ -735,8 +737,9 @@ function t1_simulateLaterDays(seq, startDate, limitedPacks, weeklyUsedMap) {
     let minPriceForDay = 1e15;
 
     const canUseWeekly = !weeklyUsedMap.has(weekKey) && (targetPaid >= 5000);
+    const weeklyOptions = (canUseWeekly ? [1, 0] : [0]);
 
-    for (let useWeekly = (canUseWeekly ? [1, 0] : [0]); useWeekly >= 0; useWeekly--) {
+    for (let useWeekly of weeklyOptions) {
       const res = t1_getOptimalChargeComposition(targetPaid, useWeekly === 1);
       if (res.price < minPriceForDay) {
         minPriceForDay = res.price;
@@ -796,7 +799,7 @@ function t1_buildScheduleForMode(mode, netTargetTickets, startDate, cond1, t1, d
     const d0 = new Date(baseDate);
     const d0Week = t1_getWeekIdentifier(d0);
 
-    let laterRes = t1_simulateLaterDays(seq, startDate, limitedPacks, seqWeeklyMap);
+    let laterRes = t1_simulateLaterDays(seq, startDate, limitedPacks, new Set(seqWeeklyMap));
     let remMin = Math.max(0, globalMinTickets - laterRes.totalTickets);
     let remMax = globalMaxTickets - laterRes.totalTickets;
 
@@ -968,7 +971,7 @@ function t1_keisanJikkou() {
 }
 
 
-/* ================= ツール2 ロジック ================= */
+/* ================= 予算ベース ロジック ================= */
 function t2_getVal(id) {
   const el = document.getElementById("t2-" + id);
   return el ? el.value : "";
@@ -1008,12 +1011,14 @@ function t2_formatDate(d) {
 }
 
 function t2_getWeekIdentifier(dateObj) {
-  const d = new Date(dateObj);
+  const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
   const day = d.getDay();
   const diffToMon = (day === 0 ? -6 : 1 - day);
-  const mon = new Date(d);
-  mon.setDate(d.getDate() + diffToMon);
-  return mon.toISOString().slice(0, 10);
+  d.setDate(d.getDate() + diffToMon);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const date = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${date}`;
 }
 
 const t2_rewardSteps = [
@@ -1298,7 +1303,6 @@ function t2_keisanBudgetOptimal() {
       return;
     }
 
-    // プラン1の描画
     const c1 = document.getElementById('t2-result1-container');
     if (c1) c1.style.display = "block";
     for (let i = 1; i <= 8; i++) {
@@ -1321,7 +1325,6 @@ function t2_keisanBudgetOptimal() {
     let g1 = Math.floor(plan1.totalTickets / (isFirstWeek ? 8 : 10) * 10);
     document.getElementById('t2-res1-gacha').textContent = `ガチャ換算： 約 ${g1} 連分（${timingLabel}基準）`;
 
-    // プラン2の描画
     const c2 = document.getElementById('t2-result2-container');
     if (c2) c2.style.display = "block";
     for (let i = 1; i <= 8; i++) {
